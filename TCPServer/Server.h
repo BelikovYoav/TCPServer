@@ -7,7 +7,7 @@
 using namespace std;
 
 #define MAX_SOCKETS 60
-
+#define TIMEOUT 1
 class Server
 {
 	private:
@@ -33,9 +33,11 @@ class Server
 		int socketsCount = 0;
 
 		void init(int listenPort);
+		void handleConnections();
 
 		bool addSocket(SOCKET socket, receiveStatus recv);
 		void removeSocket(int index);
+		int getNFD(fd_set* waitRecv, fd_set* waitSend);
 
 	public:
 		//CONSTRUCTOR AND DESTRUCTOR
