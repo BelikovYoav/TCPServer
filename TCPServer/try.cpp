@@ -1,6 +1,7 @@
 #include "Request.h"
 #include "Server.h"
 
+#define PORT 27015
 int main()
 {
 	int errorCode = 0;
@@ -14,7 +15,7 @@ int main()
 		}
 
 		Server server;
-		server.runServer(27015);
+		server.runServer(PORT);
 	}
 	catch(exception ex){
 		cout << ex.what() << endl;

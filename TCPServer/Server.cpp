@@ -21,7 +21,7 @@ Server::~Server()
 void Server::runServer(int listenPort)
 {
 	init(listenPort);
-	cout << "success" << endl;
+	cout << socketsCount << endl;
 }
 
 void Server::init(int listenPort)
@@ -41,4 +41,33 @@ void Server::init(int listenPort)
 		cout << "Time Server: Error at listen(): " << WSAGetLastError() << endl;
 		throw exception();
 	}
+
+	addSocket(listenSocket, receiveStatus::LISTEN);
+}
+
+bool Server::addSocket(SOCKET socket, receiveStatus recv)
+{
+	bool added = false;
+	for (int i = 0; i < MAX_SOCKETS; i++)
+	{
+		if (sockets[i].recv == receiveStatus::EMPTY)
+		{
+			sockets[i].socket = socket;
+			sockets[i].recv = recv;
+			sockets[i].send = sendStatus::IDLE;
+			sockets[i].len = 0;
+			socketsCount++;
+			added = true;
+			break;
+		}
+	}
+
+	return added;
+}
+
+void Server::removeSocket(int index)
+{
+	sockets[index].recv = receiveStatus::EMPTY;
+	sockets[index].send = sendStatus::EMPTY;
+	socketsCount--;
 }
