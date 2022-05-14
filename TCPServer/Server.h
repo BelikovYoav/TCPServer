@@ -38,6 +38,8 @@ class Server
 		bool addSocket(SOCKET socket, receiveStatus recv);
 		void removeSocket(int index);
 		int getNFD(fd_set* waitRecv, fd_set* waitSend);
+		void handleReceiveSockets(int* nfd, fd_set* waitRecv);
+		void handleSendSockets(int* nfd, fd_set* waitSend);
 
 	public:
 		//CONSTRUCTOR AND DESTRUCTOR

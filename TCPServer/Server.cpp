@@ -6,6 +6,7 @@ Server::Server()
 	listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if (INVALID_SOCKET == listenSocket)
 	{
+		closesocket(listenSocket);
 		cout << "Server: Error at socket(): " << WSAGetLastError() << endl;
 		throw exception();
 	}
@@ -22,6 +23,7 @@ void Server::runServer(int listenPort)
 {
 	init(listenPort);
 	handleConnections();
+	closesocket(listenSocket);
 }
 
 void Server::init(int listenPort)
@@ -32,12 +34,14 @@ void Server::init(int listenPort)
 
 	if (SOCKET_ERROR == bind(listenSocket, (SOCKADDR*)&serverService, sizeof(serverService)))
 	{
+		closesocket(listenSocket);
 		cout << "Server: Error at bind(): " << WSAGetLastError() << endl;
 		throw exception();
 	}
 
 	if (SOCKET_ERROR == listen(listenSocket, 5))
 	{
+		closesocket(listenSocket);
 		cout << "Server: Error at listen(): " << WSAGetLastError() << endl;
 		throw exception();
 	}
@@ -54,7 +58,8 @@ void Server::handleConnections()
 		fd_set waitRecv, waitSend;
 		nfd = getNFD(&waitRecv, &waitSend);
 		cout << nfd << endl;
-
+		handleReceiveSockets(&nfd, &waitRecv);
+		handleSendSockets(&nfd, &waitSend);
 	}
 }
 
@@ -112,4 +117,42 @@ int Server::getNFD(fd_set* waitRecv, fd_set* waitSend)
 	}
 
 	return nfd;
+}
+
+void Server::handleReceiveSockets(int* nfd, fd_set* waitRecv)
+{
+	for (int i = 0; i < MAX_SOCKETS && *nfd > 0; i++)
+	{
+		if (FD_ISSET(sockets[i].socket, waitRecv))
+		{
+			nfd--;
+			switch (sockets[i].recv)
+			{
+			case receiveStatus::LISTEN:
+				//acceptConnection(i);
+				break;
+
+			case receiveStatus::RECEIVE:
+				//receiveMessage(i);
+				break;
+			}
+		}
+	}
+}
+
+void Server::handleSendSockets(int* nfd, fd_set* waitSend) 
+{
+	for (int i = 0; i < MAX_SOCKETS && *nfd > 0; i++)
+	{
+		if (FD_ISSET(sockets[i].socket, waitSend))
+		{
+			nfd--;
+			switch (sockets[i].send)
+			{
+			case sendStatus::SEND:
+				//sendMessage(i);
+				break;
+			}
+		}
+	}
 }
