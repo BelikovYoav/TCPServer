@@ -57,7 +57,6 @@ void Server::handleConnections()
 	{
 		fd_set waitRecv, waitSend;
 		nfd = getNFD(&waitRecv, &waitSend);
-		cout << nfd << endl;
 		handleReceiveSockets(&nfd, &waitRecv);
 		handleSendSockets(&nfd, &waitSend);
 	}
@@ -66,18 +65,31 @@ void Server::handleConnections()
 bool Server::addSocket(SOCKET socket, receiveStatus recv)
 {
 	bool added = false;
-	for (int i = 0; i < MAX_SOCKETS; i++)
+
+	// Set the socket to be in non-blocking mode.
+	unsigned long flag = 1;
+	if (ioctlsocket(socket, FIONBIO, &flag) != 0)
 	{
-		if (sockets[i].recv == receiveStatus::EMPTY)
+		cout << "Server: Error at ioctlsocket(): " << WSAGetLastError() << endl;
+	}
+	else
+	{
+		for (int i = 0; i < MAX_SOCKETS; i++)
 		{
-			sockets[i].socket = socket;
-			sockets[i].recv = recv;
-			sockets[i].send = sendStatus::IDLE;
-			sockets[i].len = 0;
-			socketsCount++;
-			added = true;
-			break;
+			if (sockets[i].recv == receiveStatus::EMPTY)
+			{
+				sockets[i].socket = socket;
+				sockets[i].recv = recv;
+				sockets[i].send = sendStatus::IDLE;
+				sockets[i].len = 0;
+				socketsCount++;
+				added = true;
+				break;
+			}
 		}
+
+		if(!added)
+			cout << "\t\tToo many connections, dropped!\n";
 	}
 
 	return added;
@@ -129,7 +141,7 @@ void Server::handleReceiveSockets(int* nfd, fd_set* waitRecv)
 			switch (sockets[i].recv)
 			{
 			case receiveStatus::LISTEN:
-				//acceptConnection(i);
+				acceptConnection(i);
 				break;
 
 			case receiveStatus::RECEIVE:
@@ -154,5 +166,25 @@ void Server::handleSendSockets(int* nfd, fd_set* waitSend)
 				break;
 			}
 		}
+	}
+}
+
+void Server::acceptConnection(int index)
+{
+	SOCKET socket = sockets[index].socket;
+	struct sockaddr_in from;
+	int fromLen = sizeof(from);
+
+	SOCKET msgSocket = accept(socket, (struct sockaddr*)&from, &fromLen);
+	if (INVALID_SOCKET == msgSocket)
+	{
+		cout << "Server: Error at accept(): " << WSAGetLastError() << endl;
+		throw exception();
+	}
+	cout << "Server: Client " << inet_ntoa(from.sin_addr) << ":" << ntohs(from.sin_port) << " is connected." << endl;
+
+	if (addSocket(msgSocket, receiveStatus::RECEIVE) == false)
+	{
+		closesocket(socket);
 	}
 }
