@@ -1,12 +1,15 @@
 #pragma once
 #include <string>
 #include <map>
+#include <algorithm>
 using namespace std;
+#define CRLF "\r\n"
 
 enum Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE };
 enum Lang { en, he, fr };
 
-class Parser {
+
+class Request {
 public:
 	string m_method;
 	string m_path;
@@ -16,14 +19,14 @@ public:
 	map<string, string> m_headers;
 	string m_body;
 
-	Parser(string str);
+	Request(string str);
 
-	void getMethod(const string& str);
+	void getVersion(string& str);
 	void getPath(string& str);
-	void getVersion(const string& str);
 	void getHeaders(string& str);
 
+	void getRequestLine(string& str);
 
-	string getWord(string& str, string param);
+	string getToken(string& str, string param);
 
 };
