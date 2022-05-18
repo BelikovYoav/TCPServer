@@ -11,7 +11,7 @@ int main()
 
 		if (NO_ERROR != WSAStartup(MAKEWORD(2, 2), &wsaData))
 		{
-			throw exception("Time Server : Error at WSAStartup()");
+			throw exception("Server : Error at WSAStartup()");
 		}
 
 		Server server;

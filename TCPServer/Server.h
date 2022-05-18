@@ -5,6 +5,8 @@
 #include <iostream>
 #include <winsock2.h>
 #include <time.h>
+#include <fstream>
+#include <sstream>
 #pragma comment(lib, "Ws2_32.lib")
 using namespace std;
 
@@ -23,7 +25,7 @@ class Server
 			receiveStatus recv;
 			sendStatus send;
 			sendType sendType;
-			char buffer[128];
+			char buffer[600];
 			int len;
 		};
 
@@ -44,6 +46,8 @@ class Server
 		void handleReceiveSockets(int* nfd, fd_set* waitRecv);
 		void handleSendSockets(int* nfd, fd_set* waitSend);
 		void acceptConnection(int index);
+		void receiveMessage(int index);
+		void sendMessage(int index);
 
 	public:
 		//CONSTRUCTOR AND DESTRUCTOR
