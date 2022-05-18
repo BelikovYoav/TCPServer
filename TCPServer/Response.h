@@ -16,10 +16,11 @@ private:
 	pair<int, string> StatusCode;
 	map<string, string> m_headers;
 	string m_body;
-	string language;
 
+	bool checkValid(bool isValid);
 	void checkMethod(Request& req);
-	void checkVersion();
+	bool checkVersion(string& version);
+	void badRequest(int errorCode);
 	// to_string
 public:
 	Response(Request req);
