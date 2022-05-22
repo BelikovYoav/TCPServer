@@ -88,7 +88,7 @@ bool Server::addSocket(SOCKET socket, receiveStatus recv)
 			}
 		}
 
-		if(!added)
+		if (!added)
 			cout << "\t\tToo many connections, dropped!\n";
 	}
 
@@ -105,8 +105,8 @@ void Server::removeSocket(int index)
 int Server::getNFD(fd_set* waitRecv, fd_set* waitSend)
 {
 	int nfd = 0;
-	timeval timeout = {TIMEOUT, 0};
-	
+	timeval timeout = { TIMEOUT, 0 };
+
 	FD_ZERO(waitRecv);
 	for (int i = 0; i < MAX_SOCKETS; i++)
 	{
@@ -152,7 +152,7 @@ void Server::handleReceiveSockets(int* nfd, fd_set* waitRecv)
 	}
 }
 
-void Server::handleSendSockets(int* nfd, fd_set* waitSend) 
+void Server::handleSendSockets(int* nfd, fd_set* waitSend)
 {
 	for (int i = 0; i < MAX_SOCKETS && *nfd > 0; i++)
 	{
@@ -192,9 +192,20 @@ void Server::acceptConnection(int index)
 void Server::receiveMessage(int index)
 {
 	SOCKET msgSocket = sockets[index].socket;
+	time_t timeNow;
+	int len;
+	int bytesRecv;
+	time(&timeNow);
 
-	int len = sockets[index].len;
-	int bytesRecv = recv(msgSocket, &sockets[index].buffer[len], sizeof(sockets[index].buffer) - len, 0);
+	if (timeNow - sockets[index].timer >= 120 && sockets[index].timer != 0)
+		bytesRecv = 0;
+	else
+	{
+		len = sockets[index].len;
+		bytesRecv = recv(msgSocket, &sockets[index].buffer[len], sizeof(sockets[index].buffer) - len, 0);
+		sockets[index].timer = timeNow;
+	}
+	
 
 	if (SOCKET_ERROR == bytesRecv)
 	{
@@ -213,29 +224,34 @@ void Server::receiveMessage(int index)
 		{
 			sockets[index].buffer[len + bytesRecv] = '\0'; //add the null-terminating to make it a string
 			cout << "Server: Recieved: " << bytesRecv << " bytes of \"" << &sockets[index].buffer[len] << "\" message.\n\n";
-
 			sockets[index].len += bytesRecv;
 
-			if (sockets[index].len > 0)
+			string msg = sockets[index].buffer;
+			if (sockets[index].len > 0 && msg.find("\r\n\r\n"))
 			{
-				// check string and determine the send subType
+				sockets[index].len++;
 				sockets[index].send = sendStatus::SEND;
-				strcpy(sockets[index].buffer, "");
-				len = 0;
-			}
+			}	
 		}
 	}
-	
 }
 
 void Server::sendMessage(int index)
 {
 	int bytesSent = 0;
-	char sendBuff[1024];
+	char sendBuff[1024] = "";
 
 	SOCKET msgSocket = sockets[index].socket;
+	string msg = sockets[index].buffer;
+	int msgLen = msg.length() + 1;
+	Request req(msg);
+	Response res(req);
 
-	//dewbug
+	strcpy(sendBuff, res.toString().c_str());
+	memcpy(sockets[index].buffer, &sockets[index].buffer[msgLen], sockets[index].len - msgLen);
+	sockets[index].len -= msgLen;
+	/*
+	//debug
 	string data_str;
 	ifstream file("C:\\Users\\user\\Desktop\\index.html");
 	if (file.is_open()) {
@@ -244,15 +260,16 @@ void Server::sendMessage(int index)
 		data_str = ss.str();
 	}
 	file.close();
+
 	string msg = "HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\n\Content-Length: ";
 	msg += to_string(data_str.length());
 	msg += "\r\n\r\n";
 	msg += data_str;
 	strcpy(sendBuff, msg.c_str());
 
-	cout  << "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\n" << msg << endl;
+	cout << msg << endl;
 	//dewbug
-
+	*/
 
 	// enter message to buffer here
 	/*char data[] = "<!DOCTYPE html><html>\n<body>\n<h1>Hello, World!</h1>\n</body>\n</html>";
@@ -274,7 +291,7 @@ void Server::sendMessage(int index)
 	{
 		cout << "Server: Sent: " << bytesSent << "\\" << strlen(sendBuff) << " bytes of \"" << sendBuff << "\" message.\n\n";
 
-		//if buffer have mssages, change to SEND
-		sockets[index].send = sendStatus::IDLE;
+		if(sockets[index].len == 0)
+			sockets[index].send = sendStatus::IDLE;
 	}
 }

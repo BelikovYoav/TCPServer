@@ -5,7 +5,7 @@
 using namespace std;
 #define CRLF "\r\n"
 
-enum Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE };
+//enum Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE };
 enum Lang { en, he, fr };
 
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Request.h"
+#include "Utils.h"
 
 class StatusCode {
 private:
@@ -12,20 +13,19 @@ public:
 
 class Response {
 private:
-	float httpVersion;
+	double httpVersion;
 	pair<int, string> StatusCode;
 	map<string, string> m_headers;
 	string m_body;
 
-	bool checkValid(bool isValid);
-	void checkMethod(Request& req);
-	bool checkVersion(string& version);
 	void badRequest(int errorCode);
-	// to_string
+	bool checkValid(bool isValid);
+	bool checkVersion(string& version);
+	void checkMethod(Request& req);
+
+	void get(Request& req);
 public:
 	Response(Request req);
-	
-	
-
+	string toString();
 
 };
