@@ -17,7 +17,7 @@ string getFileData(bool* valid, string path)
 {
 	string data_str = "";
 	*valid = true;
-	ifstream file(BASICPATH + doubleTheChar(path, '\\'));
+	ifstream file(path);
 	if (file.is_open()) {
 		stringstream ss;
 		ss << file.rdbuf();
@@ -30,4 +30,19 @@ string getFileData(bool* valid, string path)
 	}
 
 	return data_str;
+}
+
+bool fileExist(string path) 
+{
+	bool exist;
+
+	if (FILE* file = fopen(path.c_str(), "r")) {
+		fclose(file);
+		exist = true;
+	}
+	else {
+		exist = false;
+	}
+
+	return exist;
 }

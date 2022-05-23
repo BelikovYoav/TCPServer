@@ -27,8 +27,10 @@ private:
 	void get(Request& req);
 	void head(Request& req);
 	void post(Request& req);
+	void put(Request& req);
 	void trace(Request& req);
 	void options(Request& req);
+
 public:
 	Response(Request req);
 	string toString();

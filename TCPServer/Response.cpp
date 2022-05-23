@@ -6,16 +6,16 @@ StatusCode::StatusCode()
 {
 	//Used
 	StatusCodes.insert(pair<int, string>(200, "OK"));
+	StatusCodes.insert(pair<int, string>(201, "Created"));
 	StatusCodes.insert(pair<int, string>(400, "Bad Request"));
 	StatusCodes.insert(pair<int, string>(404, "Not Found"));
+	StatusCodes.insert(pair<int, string>(405, "Method Not Allowed"));
 	StatusCodes.insert(pair<int, string>(505, "HTTP Version Not Supported"));
 
 	// Not Used
-	StatusCodes.insert(pair<int, string>(201, "Created"));
 	StatusCodes.insert(pair<int, string>(202, "Accepted"));
 	StatusCodes.insert(pair<int, string>(204, "No Content"));
 	StatusCodes.insert(pair<int, string>(301, "Moved Permanently"));
-	StatusCodes.insert(pair<int, string>(405, "Method Not Allowed"));
 	StatusCodes.insert(pair<int, string>(500, "Internal Server Error"));
 	StatusCodes.insert(pair<int, string>(501, "Not Implemented"));
 }
@@ -102,7 +102,7 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "PUT")
 	{
-
+		put(req);
 	}
 	else if (methodName == "DELETE")
 	{
@@ -130,6 +130,7 @@ string Response::getPath(string& reqPath, string& language)
 	else
 		path.append(".").append(language);
 
+	path = BASICPATH + doubleTheChar(path, '\\');
 	return path;
 }
 
@@ -173,6 +174,47 @@ void Response::post(Request& req)
 	}
 }
 
+void Response::put(Request& req)
+{
+	if (req.m_headers.find("Content-Length") == req.m_headers.end())
+	{
+		badRequest(400);
+	}
+	else
+	{
+		string path = getPath(req.m_path, req.m_language);
+		ofstream file;
+		if (fileExist(path))
+		{
+			this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
+		}
+		else
+		{
+			this->StatusCode = pair<int, string>(201, StatusCode::getStatusCode(200));
+		}
+
+		this->m_headers.insert(pair<string, string>("Content-Length", "0"));
+		if (path[path.length() - 4] == '/')
+		{
+			badRequest(400);
+		}
+		else
+		{
+			file.open(path);
+			if (!file.is_open())
+			{
+				badRequest(400);
+			}
+			else
+			{
+				file.write(req.m_body.c_str(), req.m_body.length());
+			}
+
+			file.close();
+		}
+	}
+}
+
 void Response::trace(Request& req)
 {
 	this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
@@ -195,3 +237,5 @@ void Response::options(Request& req)
 		this->m_headers.insert(pair<string, string>("Allow", "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS"));
 	}
 }
+
+
