@@ -28,6 +28,7 @@ private:
 	void head(Request& req);
 	void post(Request& req);
 	void put(Request& req);
+	void httpDelete(Request& req);
 	void trace(Request& req);
 	void options(Request& req);
 

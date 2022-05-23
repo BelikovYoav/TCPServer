@@ -106,7 +106,7 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "DELETE")
 	{
-
+		httpDelete(req);
 	}
 	else if (methodName == "TRACE")
 	{
@@ -124,7 +124,7 @@ void Response::checkMethod(Request& req)
 
 string Response::getPath(string& reqPath, string& language)
 {
-	string path = reqPath != "" ? reqPath : "index";
+	string path = reqPath;
 	if (language == "" || ((language != "fr") && (language != "en") && (language != "he")))
 		path.append(".en");
 	else
@@ -215,6 +215,28 @@ void Response::put(Request& req)
 	}
 }
 
+void Response::httpDelete(Request& req)
+{
+	string path = getPath(req.m_path, req.m_language);
+	if (fileExist(path))
+	{
+		if (remove(path.c_str()) != 0)
+		{
+			this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
+		}
+		else
+		{
+			badRequest(400);
+		}
+	}
+	else
+	{
+		badRequest(204);
+	}
+
+	this->m_headers.insert(pair<string, string>("Content-Length", "0"));
+}
+
 void Response::trace(Request& req)
 {
 	this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
@@ -225,11 +247,9 @@ void Response::trace(Request& req)
 
 void Response::options(Request& req)
 {
-	bool valid;
 	string path = getPath(req.m_path, req.m_language);
-	getFileData(&valid, path);
 
-	if ((req.m_path != "*") && (!valid))
+	if ((req.m_path != "*") && (!fileExist(path)))
 		badRequest(404);
 	else
 	{
