@@ -22,8 +22,10 @@ private:
 	bool checkValid(bool isValid);
 	bool checkVersion(string& version);
 	void checkMethod(Request& req);
+	string getPath(string& reqPath, string& language);
 
 	void get(Request& req);
+	void head(Request& req);
 public:
 	Response(Request req);
 	string toString();

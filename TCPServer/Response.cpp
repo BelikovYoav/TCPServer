@@ -92,7 +92,7 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "HEAD")
 	{
-
+		head(req);
 	}
 	else if (methodName == "POST")
 	{
@@ -120,17 +120,21 @@ void Response::checkMethod(Request& req)
 	}
 }
 
-void Response::get(Request& req)
+string Response::getPath(string& reqPath, string& language)
 {
-	string path;
-	bool valid;
-
-	path = req.m_path != "" ? req.m_path:"index";
-	if (req.m_language == "" || ((req.m_language != "fr") && (req.m_language != "en") && (req.m_language != "he")))
+	string path = reqPath != "" ? reqPath : "index";
+	if (language == "" || ((language != "fr") && (language != "en") && (language != "he")))
 		path.append(".en");
 	else
-		path.append(".").append(req.m_language);
+		path.append(".").append(language);
 
+	return path;
+}
+
+void Response::get(Request& req)
+{
+	bool valid;
+	string path = getPath(req.m_path, req.m_language);
 	string data_str = getFileData(&valid, path);
 	int data_len = data_str.length();
 	if (valid)
@@ -144,4 +148,11 @@ void Response::get(Request& req)
 	{
 		badRequest(404);
 	}
+}
+
+void Response::head(Request& req)
+{
+	get(req);
+	if(StatusCode.first == 200)
+		this->m_body = "";
 }
