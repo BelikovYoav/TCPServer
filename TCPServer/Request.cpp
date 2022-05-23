@@ -3,6 +3,7 @@
 
 Request::Request(string str) {
 	try {// Constructor with parameters
+		Request::m_raw = str;
 		string line = Request::getToken(str, CRLF);
 		Request::getRequestLine(line);
 		Request::getHeaders(str);
