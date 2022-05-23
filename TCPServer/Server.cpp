@@ -56,6 +56,7 @@ void Server::handleConnections()
 	while (true)
 	{
 		fd_set waitRecv, waitSend;
+		checkTimeouts();
 		nfd = getNFD(&waitRecv, &waitSend);
 		handleReceiveSockets(&nfd, &waitRecv);
 		handleSendSockets(&nfd, &waitSend);
@@ -99,7 +100,24 @@ void Server::removeSocket(int index)
 {
 	sockets[index].recv = receiveStatus::EMPTY;
 	sockets[index].send = sendStatus::EMPTY;
+	sockets[index].timer = 0;
 	socketsCount--;
+	cout << socketsCount;
+}
+
+void Server::checkTimeouts()
+{
+	time_t timeNow;
+	time(&timeNow);
+
+	for (int i = 1; i < MAX_SOCKETS; i++)
+	{
+		if (timeNow - sockets[i].timer >= 120 && sockets[i].timer != 0)
+		{
+			closesocket(sockets[i].socket);
+			removeSocket(i);
+		}
+	}
 }
 
 int Server::getNFD(fd_set* waitRecv, fd_set* waitSend)
@@ -192,21 +210,12 @@ void Server::acceptConnection(int index)
 void Server::receiveMessage(int index)
 {
 	SOCKET msgSocket = sockets[index].socket;
-	time_t timeNow;
 	int len;
 	int bytesRecv;
-	time(&timeNow);
 
-	if (timeNow - sockets[index].timer >= 120 && sockets[index].timer != 0)
-		bytesRecv = 0;
-	else
-	{
-		len = sockets[index].len;
-		bytesRecv = recv(msgSocket, &sockets[index].buffer[len], sizeof(sockets[index].buffer) - len, 0);
-		sockets[index].timer = timeNow;
-	}
-	
-
+	len = sockets[index].len;
+	bytesRecv = recv(msgSocket, &sockets[index].buffer[len], sizeof(sockets[index].buffer) - len, 0);
+	time(&sockets[index].timer);
 	if (SOCKET_ERROR == bytesRecv)
 	{
 		cout << "Server: Error at recv(): " << WSAGetLastError() << endl;

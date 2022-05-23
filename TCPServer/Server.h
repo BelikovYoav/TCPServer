@@ -41,13 +41,13 @@ private:
 	bool addSocket(SOCKET socket, receiveStatus recv);
 	void removeSocket(int index);
 
+	void checkTimeouts();
 	int getNFD(fd_set* waitRecv, fd_set* waitSend);
 	void handleReceiveSockets(int* nfd, fd_set* waitRecv);
 	void handleSendSockets(int* nfd, fd_set* waitSend);
 	void acceptConnection(int index);
 	void receiveMessage(int index);
 	void sendMessage(int index);
-
 public:
 	//CONSTRUCTOR AND DESTRUCTOR
 	Server();
