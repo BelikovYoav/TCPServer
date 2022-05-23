@@ -18,19 +18,21 @@ private:
 	map<string, string> m_headers;
 	string m_body;
 
-	void badRequest(int errorCode);
+	void fillResponse(int statusCode);
+	void fillResponse(int statusCode, string data);
 	bool checkValid(bool isValid);
 	bool checkVersion(string& version);
 	void checkMethod(Request& req);
 	string getPath(string& reqPath, string& language);
+	void addHeader(const string& key, const string& value);
 
-	void get(Request& req);
-	void head(Request& req);
-	void post(Request& req);
-	void put(Request& req);
+	void httpGet(Request& req);
+	void httpHead(Request& req);
+	void httpPost(Request& req);
+	void httpPut(Request& req);
 	void httpDelete(Request& req);
-	void trace(Request& req);
-	void options(Request& req);
+	void httpTrace(Request& req);
+	void httpOptions(Request& req);
 
 public:
 	Response(Request req);

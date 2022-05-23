@@ -7,17 +7,17 @@ StatusCode::StatusCode()
 	//Used
 	StatusCodes.insert(pair<int, string>(200, "OK"));
 	StatusCodes.insert(pair<int, string>(201, "Created"));
+	StatusCodes.insert(pair<int, string>(204, "No Content"));
 	StatusCodes.insert(pair<int, string>(400, "Bad Request"));
 	StatusCodes.insert(pair<int, string>(404, "Not Found"));
 	StatusCodes.insert(pair<int, string>(405, "Method Not Allowed"));
-	StatusCodes.insert(pair<int, string>(505, "HTTP Version Not Supported"));
+	StatusCodes.insert(pair<int, string>(500, "Internal Server Error"));
 
 	// Not Used
 	StatusCodes.insert(pair<int, string>(202, "Accepted"));
-	StatusCodes.insert(pair<int, string>(204, "No Content"));
 	StatusCodes.insert(pair<int, string>(301, "Moved Permanently"));
-	StatusCodes.insert(pair<int, string>(500, "Internal Server Error"));
 	StatusCodes.insert(pair<int, string>(501, "Not Implemented"));
+	StatusCodes.insert(pair<int, string>(505, "HTTP Version Not Supported"));
 }
 
 string StatusCode::getStatusCode(int code)
@@ -56,17 +56,26 @@ string Response::toString()
 	return str.str();
 }
 
-void Response::badRequest(int errorCode)
+void Response::fillResponse(int statusCode)
 {
 	this->httpVersion = 1.1;
-	this->StatusCode = pair<int, string>(errorCode, StatusCode::getStatusCode(errorCode));
-	this->m_headers.insert(pair<string, string>("Content-Length", "0"));
+	this->StatusCode = pair<int, string>(statusCode, StatusCode::getStatusCode(statusCode));
+	if (statusCode != 204)
+		addHeader("Content-Length", "0");
+}
+
+void Response::fillResponse(int statusCode, string data)
+{
+	fillResponse(statusCode);
+	addHeader("Content-Type", "text/html; charset=UTF-8");
+	addHeader("Content-Length", to_string(data.length()));
+	this->m_body = data;
 }
 
 bool Response::checkValid(bool isValid)
 {
 	if (false == isValid)
-		badRequest(400);
+		fillResponse(400);
 	return isValid;
 }
 
@@ -79,7 +88,7 @@ bool Response::checkVersion(string& version)
 	else if ("HTTP/1.0" == version)
 		this->httpVersion = 1.0;
 	else {
-		badRequest(500);
+		fillResponse(500);
 		check = false;
 	}
 	return check;
@@ -90,19 +99,19 @@ void Response::checkMethod(Request& req)
 	string methodName = req.m_method;
 	if (methodName == "GET")
 	{
-		get(req);
+		httpGet(req);
 	}
 	else if (methodName == "HEAD")
 	{
-		head(req);
+		httpHead(req);
 	}
 	else if (methodName == "POST")
 	{
-		post(req);
+		httpPost(req);
 	}
 	else if (methodName == "PUT")
 	{
-		put(req);
+		httpPut(req);
 	}
 	else if (methodName == "DELETE")
 	{
@@ -110,15 +119,15 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "TRACE")
 	{
-		trace(req);
+		httpTrace(req);
 	}
 	else if (methodName == "OPTIONS")
 	{
-		options(req);
+		httpOptions(req);
 	}
 	else
 	{
-		badRequest(405);
+		fillResponse(405);
 	}
 }
 
@@ -134,51 +143,54 @@ string Response::getPath(string& reqPath, string& language)
 	return path;
 }
 
-void Response::get(Request& req)
+void Response::addHeader(const string& key, const string& value)
+{
+	this->m_headers[key] = value;
+}
+
+
+void Response::httpGet(Request& req)
 {
 	bool valid;
 	string path = getPath(req.m_path, req.m_language);
-	string data_str = getFileData(&valid, path);
-	int data_len = data_str.length();
+	string data = getFileData(&valid, path);
 	if (valid)
 	{
-		this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
-		this->m_headers.insert(pair<string, string>("Content-Type", "text/html; charset=UTF-8"));
-		this->m_headers.insert(pair<string, string>("Content-Length", to_string(data_len)));
-		this->m_body = data_str;
+		fillResponse(200, data);
 	}
 	else
 	{
-		badRequest(404);
+		fillResponse(404);
 	}
 }
 
-void Response::head(Request& req)
+void Response::httpHead(Request& req)
 {
-	get(req);
-	if(StatusCode.first == 200)
+	httpGet(req);
+	if (StatusCode.first == 200)
+	{
 		this->m_body = "";
+	}
 }
 
-void Response::post(Request& req)
+void Response::httpPost(Request& req)
 {
 	if (req.m_body == "")
 	{
-		badRequest(400);
+		fillResponse(400);
 	}
 	else
 	{
-		this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
-		this->m_headers.insert(pair<string, string>("Content-Length", "0"));
+		fillResponse(200);
 		cout << req.m_body << endl;
 	}
 }
 
-void Response::put(Request& req)
+void Response::httpPut(Request& req)
 {
 	if (req.m_headers.find("Content-Length") == req.m_headers.end())
 	{
-		badRequest(400);
+		fillResponse(400);
 	}
 	else
 	{
@@ -186,24 +198,23 @@ void Response::put(Request& req)
 		ofstream file;
 		if (fileExist(path))
 		{
-			this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
+			fillResponse(200);
 		}
 		else
 		{
-			this->StatusCode = pair<int, string>(201, StatusCode::getStatusCode(200));
+			fillResponse(201);
 		}
 
-		this->m_headers.insert(pair<string, string>("Content-Length", "0"));
 		if (path[path.length() - 4] == '/')
 		{
-			badRequest(400);
+			fillResponse(400);
 		}
 		else
 		{
 			file.open(path);
 			if (!file.is_open())
 			{
-				badRequest(400);
+				fillResponse(400);
 			}
 			else
 			{
@@ -220,42 +231,29 @@ void Response::httpDelete(Request& req)
 	string path = getPath(req.m_path, req.m_language);
 	if (fileExist(path))
 	{
-		if (remove(path.c_str()) != 0)
-		{
-			this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
-		}
-		else
-		{
-			badRequest(400);
-		}
+		remove(path.c_str()) == 0 ? fillResponse(200) : fillResponse(400);
 	}
 	else
 	{
-		badRequest(204);
+		fillResponse(404);
 	}
-
-	this->m_headers.insert(pair<string, string>("Content-Length", "0"));
 }
 
-void Response::trace(Request& req)
+void Response::httpTrace(Request& req)
 {
-	this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
-	this->m_headers.insert(pair<string, string>("Content-Type", "message/http"));
-	this->m_body = req.m_raw;
-	this->m_headers.insert(pair<string, string>("Content-Length", to_string((this->m_body).length())));
+	fillResponse(200, req.m_raw);
+	addHeader("Content-Type", "message/http");
 }
 
-void Response::options(Request& req)
+void Response::httpOptions(Request& req)
 {
 	string path = getPath(req.m_path, req.m_language);
 
 	if ((req.m_path != "*") && (!fileExist(path)))
-		badRequest(404);
+		fillResponse(404);
 	else
 	{
-		this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
-		this->m_headers.insert(pair<string, string>("Allow", "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS"));
+		fillResponse(200);
+		addHeader("Allow", "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS");
 	}
 }
-
-
