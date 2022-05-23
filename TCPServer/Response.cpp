@@ -33,13 +33,14 @@ Response::Response(Request req)
 	if (checkValid(req.m_syntax))
 		if (checkVersion(req.m_version))
 			checkMethod(req);
+
 }
 
 string Response::toString()
 {
 	stringstream str;
 
-	str << "HTTP/" << httpVersion << " " \
+	str << "HTTP/" << httpVersion << " "
 		<< StatusCode.first << " " << StatusCode.second << CRLF;
 	for (map<string, string>::iterator itr = m_headers.begin(); itr != m_headers.end(); itr++)
 	{
@@ -57,8 +58,9 @@ string Response::toString()
 
 void Response::badRequest(int errorCode)
 {
-	this->StatusCode = pair<int, string>(errorCode, StatusCode::getStatusCode(errorCode));
 	this->httpVersion = 1.1;
+	this->StatusCode = pair<int, string>(errorCode, StatusCode::getStatusCode(errorCode));
+	this->m_headers.insert(pair<string, string>("Content-Length", "0"));
 }
 
 bool Response::checkValid(bool isValid)
@@ -96,7 +98,7 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "POST")
 	{
-
+		post(req);
 	}
 	else if (methodName == "PUT")
 	{
@@ -156,3 +158,18 @@ void Response::head(Request& req)
 	if(StatusCode.first == 200)
 		this->m_body = "";
 }
+
+void Response::post(Request& req)
+{
+	if (req.m_body == "")
+	{
+		badRequest(400);
+	}
+	else
+	{
+		this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
+		this->m_headers.insert(pair<string, string>("Content-Length", "0"));
+		cout << req.m_body << endl;
+	}
+}
+
