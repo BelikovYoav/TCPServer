@@ -102,7 +102,6 @@ void Server::removeSocket(int index)
 	sockets[index].send = sendStatus::EMPTY;
 	sockets[index].timer = 0;
 	socketsCount--;
-	cout << socketsCount;
 }
 
 void Server::checkTimeouts()
