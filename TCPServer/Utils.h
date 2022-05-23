@@ -11,3 +11,4 @@ using namespace std;
 
 string doubleTheChar(string str, char ch);
 string getFileData(bool* valid, string path);
+bool fileExist(string path);
