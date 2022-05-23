@@ -114,7 +114,7 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "OPTIONS")
 	{
-
+		options(req);
 	}
 	else
 	{
@@ -179,4 +179,19 @@ void Response::trace(Request& req)
 	this->m_headers.insert(pair<string, string>("Content-Type", "message/http"));
 	this->m_body = req.m_raw;
 	this->m_headers.insert(pair<string, string>("Content-Length", to_string((this->m_body).length())));
+}
+
+void Response::options(Request& req)
+{
+	bool valid;
+	string path = getPath(req.m_path, req.m_language);
+	getFileData(&valid, path);
+
+	if ((req.m_path != "*") && (!valid))
+		badRequest(404);
+	else
+	{
+		this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
+		this->m_headers.insert(pair<string, string>("Allow", "GET, HEAD, POST, PUT, DELETE, TRACE, OPTIONS"));
+	}
 }
