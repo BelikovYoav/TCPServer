@@ -110,7 +110,7 @@ void Response::checkMethod(Request& req)
 	}
 	else if (methodName == "TRACE")
 	{
-
+		trace(req);
 	}
 	else if (methodName == "OPTIONS")
 	{
@@ -173,3 +173,10 @@ void Response::post(Request& req)
 	}
 }
 
+void Response::trace(Request& req)
+{
+	this->StatusCode = pair<int, string>(200, StatusCode::getStatusCode(200));
+	this->m_headers.insert(pair<string, string>("Content-Type", "message/http"));
+	this->m_body = req.m_raw;
+	this->m_headers.insert(pair<string, string>("Content-Length", to_string((this->m_body).length())));
+}

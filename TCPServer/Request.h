@@ -11,6 +11,7 @@ enum Lang { en, he, fr };
 
 class Request {
 public:
+	string m_raw;
 	string m_method;
 	string m_path;
 	string m_version;
