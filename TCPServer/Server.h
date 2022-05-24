@@ -23,7 +23,7 @@ private:
 		receiveStatus recv;
 		sendStatus send;
 		sendType sendType;
-		char buffer[600];
+		char buffer[1000];
 		int len;
 		time_t timer = 0;
 	};

@@ -3,14 +3,14 @@
 
 Request::Request(string str) {
 	try {// Constructor with parameters
-		Request::m_raw = str;
+		Request::rawRequest = str;
 		string line = Request::getToken(str, CRLF);
 		Request::getRequestLine(line);
 		Request::getHeaders(str);
-		Request::m_body = str;
+		Request::body = str;
 	}
 	catch (exception) {
-		Request::m_syntax = false;
+		Request::validSyntax = false;
 	}
 }
 
@@ -20,7 +20,7 @@ void Request::getRequestLine(string& str)
 	{
 		throw exception("syntax wrong");
 	}
-	Request::m_method = Request::getToken(str, " /");
+	Request::method = Request::getToken(str, " /");
 	Request::getPath(str);
 	Request::getVersion(str);
 }
@@ -31,12 +31,12 @@ void Request::getPath(string& str)
 	int find = path.find("?lang=");
 	if (find == -1)
 	{
-		Request::m_path = path;
-		Request::m_language = "en";
+		Request::path = path;
+		Request::language = "en";
 	}
 	else {
-		Request::m_path = Request::getToken(path, "?lang=");
-		Request::m_language = path;
+		Request::path = Request::getToken(path, "?lang=");
+		Request::language = path;
 	}
 
 
@@ -46,7 +46,7 @@ void Request::getVersion(string& str)
 {
 	if (str.find("HTTP/") != 0)
 		throw exception("syntax wrong");
-	Request::m_version = str;
+	Request::version = str;
 }
 
 void Request::getHeaders(string& str)
@@ -56,7 +56,7 @@ void Request::getHeaders(string& str)
 	{
 		string fieldName = Request::getToken(header, ": ");
 		string value = header;
-		this->m_headers.insert(std::pair<string, string>(fieldName, value));
+		this->headers.insert(std::pair<string, string>(fieldName, value));
 		header = Request::getToken(str, CRLF);
 	}
 
@@ -70,4 +70,44 @@ string Request::getToken(string& str, string param)
 	string word = str.substr(0, find);
 	str.erase(0, word.size() + param.size());
 	return word;
+}
+
+string Request::getRawRequest() const
+{
+	return this->rawRequest;
+}
+
+string Request::getMethod() const
+{
+	return this->method;
+}
+
+string Request::getPath() const
+{
+	return this->path;
+}
+
+string Request::getVersion() const
+{
+	return this->version;
+}
+
+string Request::getLanguage() const
+{
+	return this->language;
+}
+
+bool Request::getValidSyntax() const
+{
+	return this->validSyntax;
+}
+
+map<string, string> Request::getHeaders() const
+{
+	return this->headers;
+}
+
+string Request::getBody() const
+{
+	return this->body;
 }
