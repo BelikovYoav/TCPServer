@@ -5,29 +5,34 @@
 using namespace std;
 #define CRLF "\r\n"
 
-//enum Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE };
 enum Lang { en, he, fr };
 
-
 class Request {
-public:
-	string m_raw;
-	string m_method;
-	string m_path;
-	string m_version;
-	string m_language;
-	bool m_syntax = true;
-	map<string, string> m_headers;
-	string m_body;
+private:
+	string rawRequest;
+	string method;
+	string path;
+	string version;
+	string language;
+	bool validSyntax = true;
+	map<string, string> headers;
+	string body;
 
-	Request(string str);
-
+	void getRequestLine(string& str);
 	void getVersion(string& str);
 	void getPath(string& str);
 	void getHeaders(string& str);
-
-	void getRequestLine(string& str);
-
 	string getToken(string& str, string param);
 
+public:
+	Request(string str);
+	
+	string getRawRequest() const;
+	string getMethod() const;
+	string getPath() const;
+	string getVersion() const;
+	string getLanguage() const;
+	bool getValidSyntax() const;
+	map<string, string> getHeaders() const;
+	string getBody() const;
 };

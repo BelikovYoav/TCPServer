@@ -60,6 +60,7 @@ void Server::handleConnections()
 		nfd = getNFD(&waitRecv, &waitSend);
 		handleReceiveSockets(&nfd, &waitRecv);
 		handleSendSockets(&nfd, &waitSend);
+		//Sleep(10000);
 	}
 }
 
@@ -239,7 +240,7 @@ void Server::receiveMessage(int index)
 			{
 				sockets[index].len++;
 				sockets[index].send = sendStatus::SEND;
-			}	
+			}
 		}
 	}
 }

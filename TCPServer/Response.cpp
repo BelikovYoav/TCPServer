@@ -11,27 +11,25 @@ StatusCode::StatusCode()
 	StatusCodes.insert(pair<int, string>(400, "Bad Request"));
 	StatusCodes.insert(pair<int, string>(404, "Not Found"));
 	StatusCodes.insert(pair<int, string>(405, "Method Not Allowed"));
-	StatusCodes.insert(pair<int, string>(500, "Internal Server Error"));
+	StatusCodes.insert(pair<int, string>(505, "HTTP Version Not Supported"));
 
 	// Not Used
 	StatusCodes.insert(pair<int, string>(202, "Accepted"));
 	StatusCodes.insert(pair<int, string>(301, "Moved Permanently"));
+	StatusCodes.insert(pair<int, string>(500, "Internal Server Error"));
 	StatusCodes.insert(pair<int, string>(501, "Not Implemented"));
-	StatusCodes.insert(pair<int, string>(505, "HTTP Version Not Supported"));
 }
 
 string StatusCode::getStatusCode(int code)
 {
 	map<int, string>::iterator itr = StatusCodes.find(code);
-	//if (itr == StatusCodes.end())
-	//	return 
 	return itr->second;
 }
 
 Response::Response(Request req)
 {
-	if (checkValid(req.m_syntax))
-		if (checkVersion(req.m_version))
+	if (checkValid(req.getValidSyntax()))
+		if (checkVersion(req.getVersion()))
 			checkMethod(req);
 
 }
@@ -42,15 +40,15 @@ string Response::toString()
 
 	str << "HTTP/" << httpVersion << " "
 		<< StatusCode.first << " " << StatusCode.second << CRLF;
-	for (map<string, string>::iterator itr = m_headers.begin(); itr != m_headers.end(); itr++)
+	for (map<string, string>::iterator itr = headers.begin(); itr != headers.end(); itr++)
 	{
 		str << itr->first << ": " << itr->second << CRLF;
 	}
 
 	str << CRLF;
-	if (!m_body.empty())
+	if (!body.empty())
 	{
-		str << m_body;
+		str << body;
 	}
 
 	return str.str();
@@ -69,7 +67,7 @@ void Response::fillResponse(int statusCode, string data)
 	fillResponse(statusCode);
 	addHeader("Content-Type", "text/html; charset=UTF-8");
 	addHeader("Content-Length", to_string(data.length()));
-	this->m_body = data;
+	this->body = data;
 }
 
 bool Response::checkValid(bool isValid)
@@ -79,7 +77,7 @@ bool Response::checkValid(bool isValid)
 	return isValid;
 }
 
-bool Response::checkVersion(string& version)
+bool Response::checkVersion(const string& version)
 {
 	bool check = true;
 
@@ -88,7 +86,7 @@ bool Response::checkVersion(string& version)
 	else if ("HTTP/1.0" == version)
 		this->httpVersion = 1.0;
 	else {
-		fillResponse(500);
+		fillResponse(505);
 		check = false;
 	}
 	return check;
@@ -96,7 +94,7 @@ bool Response::checkVersion(string& version)
 
 void Response::checkMethod(Request& req)
 {
-	string methodName = req.m_method;
+	string methodName = req.getMethod();
 	if (methodName == "GET")
 	{
 		httpGet(req);
@@ -131,7 +129,7 @@ void Response::checkMethod(Request& req)
 	}
 }
 
-string Response::getPath(string& reqPath, string& language)
+string Response::getPath(const string& reqPath, const string& language)
 {
 	string path = reqPath;
 	if (language == "" || ((language != "fr") && (language != "en") && (language != "he")))
@@ -145,14 +143,14 @@ string Response::getPath(string& reqPath, string& language)
 
 void Response::addHeader(const string& key, const string& value)
 {
-	this->m_headers[key] = value;
+	this->headers[key] = value;
 }
 
 
 void Response::httpGet(Request& req)
 {
 	bool valid;
-	string path = getPath(req.m_path, req.m_language);
+	string path = getPath(req.getPath(), req.getLanguage());
 	string data = getFileData(&valid, path);
 	if (valid)
 	{
@@ -169,32 +167,33 @@ void Response::httpHead(Request& req)
 	httpGet(req);
 	if (StatusCode.first == 200)
 	{
-		this->m_body = "";
+		this->body = "";
 	}
 }
 
 void Response::httpPost(Request& req)
 {
-	if (req.m_body == "")
+	if (req.getBody() == "")
 	{
 		fillResponse(400);
 	}
 	else
 	{
 		fillResponse(200);
-		cout << req.m_body << endl;
+		cout << req.getBody() << endl;
 	}
 }
 
 void Response::httpPut(Request& req)
 {
-	if (req.m_headers.find("Content-Length") == req.m_headers.end())
+	map<string, string> headers = req.getHeaders();
+	if (headers.find("Content-Length") == headers.end())
 	{
 		fillResponse(400);
 	}
 	else
 	{
-		string path = getPath(req.m_path, req.m_language);
+		string path = getPath(req.getPath(), req.getLanguage());
 		ofstream file;
 		if (fileExist(path))
 		{
@@ -218,7 +217,7 @@ void Response::httpPut(Request& req)
 			}
 			else
 			{
-				file.write(req.m_body.c_str(), req.m_body.length());
+				file.write(req.getBody().c_str(), req.getBody().length());
 			}
 
 			file.close();
@@ -228,7 +227,7 @@ void Response::httpPut(Request& req)
 
 void Response::httpDelete(Request& req)
 {
-	string path = getPath(req.m_path, req.m_language);
+	string path = getPath(req.getPath(), req.getLanguage());
 	if (fileExist(path))
 	{
 		remove(path.c_str()) == 0 ? fillResponse(200) : fillResponse(400);
@@ -241,15 +240,15 @@ void Response::httpDelete(Request& req)
 
 void Response::httpTrace(Request& req)
 {
-	fillResponse(200, req.m_raw);
+	fillResponse(200, req.getRawRequest());
 	addHeader("Content-Type", "message/http");
 }
 
 void Response::httpOptions(Request& req)
 {
-	string path = getPath(req.m_path, req.m_language);
+	string path = getPath(req.getPath(), req.getLanguage());
 
-	if ((req.m_path != "*") && (!fileExist(path)))
+	if ((req.getPath() != "*") && (!fileExist(path)))
 		fillResponse(404);
 	else
 	{

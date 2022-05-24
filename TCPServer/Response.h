@@ -15,15 +15,15 @@ class Response {
 private:
 	double httpVersion;
 	pair<int, string> StatusCode;
-	map<string, string> m_headers;
-	string m_body;
+	map<string, string> headers;
+	string body;
 
 	void fillResponse(int statusCode);
 	void fillResponse(int statusCode, string data);
 	bool checkValid(bool isValid);
-	bool checkVersion(string& version);
+	bool checkVersion(const string& version);
 	void checkMethod(Request& req);
-	string getPath(string& reqPath, string& language);
+	string getPath(const string& reqPath, const string& language);
 	void addHeader(const string& key, const string& value);
 
 	void httpGet(Request& req);
@@ -37,5 +37,4 @@ private:
 public:
 	Response(Request req);
 	string toString();
-
 };
